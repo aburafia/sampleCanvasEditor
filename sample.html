@@ -1,0 +1,192 @@
+<html>
+
+
+<body>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+
+<div id="saveImg">保存だよ</div>
+
+<div id="changeMode">手書き</div>
+
+<!-- 文字の追加 -->
+<input type="text" id="new_text" class="form-control" placeholder="Add new text here">
+
+<input type="button" id="btn_add_new" class="btn btn-primary" value="Add New">
+
+
+<canvas id="canvas"></canvas>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/2.4.0/fabric.min.js"></script>
+
+
+	<script>
+
+var nowDrawMode = true;
+
+
+
+$('#saveImg').on('click',saveImg);
+
+
+    var canvas = new fabric.Canvas("canvas");
+    canvas.isDrawingMode = true;  // お絵かきモードの有効化
+    canvas.freeDrawingBrush.color = "#000000"; // 描画する線の色
+    canvas.freeDrawingBrush.width = 5;  // 描画する線の太さ
+
+
+    fabric.Image.fromURL('./sample.jpg', function(myImg) {
+ //i create an extra var for to change some image properties
+
+	var img1 = myImg.set({ left: 0, top: 0 ,width:150,height:150});
+	canvas.add(img1); 
+
+	canvas.add(new fabric.IText('Tap and Type', { 
+	  fontFamily: 'arial black',
+	  left: 100, 
+	  top: 100 ,
+	}));
+
+
+});
+
+<!-- ここから下は保存系 -->
+
+    function saveImg(){    
+		console.log('export image');
+		 if (!fabric.Canvas.supports('toDataURL')) {
+		  alert('This browser doesn\'t provide means to serialize canvas to an image');
+		}
+		else {
+		  // window.open(canvas.toDataURL('png'));
+
+		    var base64 = canvas.toDataURL('png');
+		    // base64データをblobに変換
+		    var blob = Base64toBlob(base64);
+		    // blobデータをa要素を使ってダウンロード
+		    saveBlob(blob, "zzzzz.png");
+
+		}
+	
+	}
+
+
+// Base64データをBlobデータに変換
+function Base64toBlob(base64)
+{
+    // カンマで分割して以下のようにデータを分ける
+    // tmp[0] : データ形式（data:image/png;base64）
+    // tmp[1] : base64データ（iVBORw0k～）
+    var tmp = base64.split(',');
+    // base64データの文字列をデコード
+    var data = atob(tmp[1]);
+    // tmp[0]の文字列（data:image/png;base64）からコンテンツタイプ（image/png）部分を取得
+	var mime = tmp[0].split(':')[1].split(';')[0];
+    //  1文字ごとにUTF-16コードを表す 0から65535 の整数を取得
+	var buf = new Uint8Array(data.length);
+	for (var i = 0; i < data.length; i++) {
+        buf[i] = data.charCodeAt(i);
+    }
+    // blobデータを作成
+	var blob = new Blob([buf], { type: mime });
+    return blob;
+}
+
+// 画像のダウンロード
+function saveBlob(blob, fileName)
+{
+    var url = (window.URL || window.webkitURL);
+    // ダウンロード用のURL作成
+    var dataUrl = url.createObjectURL(blob);
+    // イベント作成
+    var event = document.createEvent("MouseEvents");
+    event.initMouseEvent("click", true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+    // a要素を作成
+    var a = document.createElementNS("http://www.w3.org/1999/xhtml", "a");
+    // ダウンロード用のURLセット
+    a.href = dataUrl;
+    // ファイル名セット
+    a.download = fileName;
+    // イベントの発火
+    a.dispatchEvent(event);
+}
+
+
+<!-- ここから下は文字系 -->
+
+
+$('#changeMode').click("click",changeModefunc);
+
+
+function changeModefunc(){   
+
+	console.log($('#changeMode'));
+
+	if(nowDrawMode){
+		nowDrawMode = false;
+		$('#changeMode').html("移動・テキスト編集");
+		canvas.isDrawingMode = false;
+	}else{
+		nowDrawMode = true;
+		$('#changeMode').html("ドロー");
+		canvas.isDrawingMode = true;
+	}
+
+}
+
+
+		$('#btn_add_new').click("btn_add_new",fncbtn_add_new);
+
+		function fncbtn_add_new(){    
+
+	        //e.preventDefault();
+	        if($('#new_text').val() !== '')
+	        {
+		        var newText = new fabric.IText($('#new_text').val(), { 
+		            fontFamily: "Arial", 
+		            left: 10,
+		            top: 10,
+		            fontSize: 20,
+		            textAlign: "left",
+		            fill: '#fff',
+		        });
+		        canvas.add(newText);
+		        canvas.renderAll();
+		        $('#new_text').val('');
+		        renderLayers();
+	        }
+	    }
+
+	    function renderLayers(){
+	    	$("#layers").html("");
+	    	var layers = canvas.getObjects();
+	    	for(var i=0; i<layers.length; i++)
+	    	{
+	    		$('#layers').append('<li class="list-group-item">'+layers[i].text+'<a onClick="removeLayers('+i+')" class="btn btn-sm btn-warning pull-right">X</a></li>')
+	    	}
+	    }
+	    function removeLayers(index){
+	    	canvas.getObjects()[index].remove();
+	    	renderLayers();
+	    }
+	    canvas.on('object:modified', function(){
+	    	renderLayers();
+	    });
+
+
+
+
+</script>
+
+
+
+<!-- https://oar.st40.xyz/article/133 DL参考  -->
+
+<!-- https://qiita.com/0829/items/a8c98c8f53b2e821ac94 これでサーバにも保存できる  -->
+
+
+<!-- 文字はこの辺りが参考になる。けど、面倒　http://embed.plnkr.co/2UkQAJqYgzH0qPTajnr5/ -->
+
+
+
+</body></html>
